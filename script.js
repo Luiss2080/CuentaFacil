@@ -28,11 +28,19 @@ function calcular() {
   resultadoPorPersonaEl.textContent = formatearBs(porPersona);
 }
 
+function marcarActivo(btnActivo) {
+  botonesPorcentaje.forEach((b) => {
+    const activo = b === btnActivo;
+    b.classList.toggle('activo', activo);
+    b.setAttribute('aria-pressed', String(activo));
+  });
+}
+
 botonesPorcentaje.forEach((btn) => {
+  btn.setAttribute('aria-pressed', btn.classList.contains('activo') ? 'true' : 'false');
   btn.addEventListener('click', () => {
     porcentajeSeleccionado = Number(btn.dataset.porcentaje);
-    botonesPorcentaje.forEach((b) => b.classList.remove('activo'));
-    btn.classList.add('activo');
+    marcarActivo(btn);
     propinaCustomEl.value = '';
     calcular();
   });
@@ -41,7 +49,7 @@ botonesPorcentaje.forEach((btn) => {
 propinaCustomEl.addEventListener('input', () => {
   if (propinaCustomEl.value === '') return;
   porcentajeSeleccionado = Math.max(0, Number(propinaCustomEl.value) || 0);
-  botonesPorcentaje.forEach((b) => b.classList.remove('activo'));
+  marcarActivo(null);
   calcular();
 });
 
