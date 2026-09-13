@@ -1,0 +1,100 @@
+* { box-sizing: border-box; }
+
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: linear-gradient(135deg, #11998e, #38ef7d);
+  min-height: 100vh;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.contenedor {
+  background: white;
+  border-radius: 20px;
+  padding: 28px;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+}
+
+h1 { margin: 0 0 4px; color: #0b7c6f; text-align: center; }
+.subtitulo { margin: 0 0 20px; color: #777; text-align: center; font-size: 0.9rem; }
+
+label { display: block; font-weight: 600; color: #444; margin: 16px 0 6px; font-size: 0.9rem; }
+
+input[type="number"] {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 10px;
+  font-size: 1.1rem;
+}
+input[type="number"]:focus { outline: none; border-color: #11998e; }
+
+.botones-porcentaje {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+
+.botones-porcentaje button {
+  padding: 8px 0;
+  border: 2px solid #e0e0e0;
+  background: white;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  color: #444;
+}
+.botones-porcentaje button.activo {
+  background: #11998e;
+  border-color: #11998e;
+  color: white;
+}
+
+#propina-custom { margin-top: 8px; }
+
+.selector-personas {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.selector-personas input {
+  text-align: center;
+  flex: 1;
+}
+.selector-personas button {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: #11998e;
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.resultado {
+  margin-top: 24px;
+  background: #f4faf9;
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.linea {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  color: #555;
+}
+
+.linea.destacada {
+  border-top: 2px dashed #c8e6c9;
+  margin-top: 6px;
+  padding-top: 12px;
+  font-size: 1.3rem;
+  color: #0b7c6f;
+}
