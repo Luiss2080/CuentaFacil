@@ -1,9 +1,13 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import './index.css';
 import { useBilling } from './hooks/useBilling';
 import Modal from './components/Modal';
-import { Settings, Share2, Users, Download, Plus, Trash2, Edit2 } from 'lucide-react';
+import { Settings, Download, Plus, Trash2, Users, History, Clock } from 'lucide-react';
 import html2canvas from 'html2canvas';
+import { motion, AnimatePresence } from 'framer-motion';
+import confetti from 'canvas-confetti';
+
+const AVATARS = ['😎', '👽', '🤠', '🤖', '👻', '😺', '🦄', '🦖'];
 
 function App() {
   const {
@@ -14,11 +18,13 @@ function App() {
     splitMode, setSplitMode,
     numPeople, setNumPeople,
     people, setPeople,
+    history, setHistory,
     taxAmount, tipAmount, totalAmount, equalSplitAmount
   } = useBilling();
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAdvancedSplitOpen, setIsAdvancedSplitOpen] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const summaryRef = useRef(null);
 
   const handleBillChange = (e) => {
@@ -52,8 +58,27 @@ function App() {
     }
   };
 
+  const saveToHistory = () => {
+    if (billAmount > 0) {
+      const newRecord = {
+        id: Date.now(),
+        date: new Date().toLocaleDateString(),
+        amount: totalAmount,
+        currency,
+        peopleCount: splitMode === 'equal' ? numPeople : people.length
+      };
+      setHistory([newRecord, ...history].slice(0, 10));
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+    }
+  };
+
   const addPerson = () => {
-    setPeople([...people, { id: Date.now(), name: `Person ${people.length + 1}`, amount: 0 }]);
+    const randomAvatar = AVATARS[Math.floor(Math.random() * AVATARS.length)];
+    setPeople([...people, { id: Date.now(), name: `Persona ${people.length + 1}`, amount: 0, avatar: randomAvatar }]);
   };
 
   const removePerson = (id) => {
@@ -64,11 +89,26 @@ function App() {
     setPeople(people.map(p => p.id === id ? { ...p, [field]: value } : p));
   };
 
-  // Calculate advanced split remaining
+  const changeAvatar = (id) => {
+    setPeople(people.map(p => {
+      if (p.id === id) {
+        const currentIndex = AVATARS.indexOf(p.avatar);
+        const nextIndex = (currentIndex + 1) % AVATARS.length;
+        return { ...p, avatar: AVATARS[nextIndex] };
+      }
+      return p;
+    }));
+  };
+
   const allocatedAmount = people.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
   const remainingAmount = billAmount - allocatedAmount;
   
-  // Calculate individual totals (proportional tip and tax)
+  useEffect(() => {
+    if (isAdvancedSplitOpen && billAmount > 0 && Math.abs(remainingAmount) < 0.01) {
+      confetti({ particleCount: 50, spread: 60, origin: { y: 0.8 } });
+    }
+  }, [remainingAmount, isAdvancedSplitOpen, billAmount]);
+
   const getPersonTotal = (amount) => {
     const ratio = billAmount > 0 ? amount / billAmount : 0;
     const personTip = tipAmount * ratio;
@@ -77,7 +117,12 @@ function App() {
   };
 
   return (
-    <div className="glass-panel" style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="glass-panel" 
+      style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '2rem' }}
+    >
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <h1 style={{ marginBottom: '0.25rem', background: 'linear-gradient(90deg, var(--accent-color), #8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
@@ -86,9 +131,12 @@ function App() {
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Divide la cuenta sin estrés</p>
         </div>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button className="icon-button" onClick={() => setIsSettingsOpen(true)}>
+          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} className="icon-button" onClick={() => setIsHistoryOpen(true)}>
+            <History size={24} />
+          </motion.button>
+          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} className="icon-button" onClick={() => setIsSettingsOpen(true)}>
             <Settings size={24} />
-          </button>
+          </motion.button>
         </div>
       </header>
 
@@ -112,14 +160,16 @@ function App() {
             <label>Propina (%)</label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.5rem' }}>
               {[0, 10, 15, 20, 25].map(tip => (
-                <button 
+                <motion.button 
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   key={tip}
                   className={tipPercentage === tip ? 'primary' : 'secondary'}
                   onClick={() => handleTipChange(tip)}
                   style={{ padding: '0.5rem' }}
                 >
                   {tip}%
-                </button>
+                </motion.button>
               ))}
             </div>
           </div>
@@ -128,42 +178,60 @@ function App() {
             <div>
               <label>Modo de división</label>
               <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-                <button 
+                <motion.button 
+                  whileTap={{ scale: 0.95 }}
                   className={splitMode === 'equal' ? 'primary' : 'secondary'}
                   onClick={() => setSplitMode('equal')}
                   style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
                 >
                   Partes Iguales
-                </button>
-                <button 
+                </motion.button>
+                <motion.button 
+                  whileTap={{ scale: 0.95 }}
                   className={splitMode === 'advanced' ? 'primary' : 'secondary'}
                   onClick={() => { setSplitMode('advanced'); setIsAdvancedSplitOpen(true); }}
                   style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
                 >
                   Individual
-                </button>
+                </motion.button>
               </div>
             </div>
             
-            {splitMode === 'equal' && (
-              <div style={{ textAlign: 'right' }}>
-                <label>Personas</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
-                  <button className="secondary" onClick={() => handlePeopleChange(-1)} style={{ padding: '0.25rem 0.75rem' }}>-</button>
-                  <span style={{ fontSize: '1.25rem', fontWeight: 'bold', width: '2ch', textAlign: 'center' }}>{numPeople}</span>
-                  <button className="secondary" onClick={() => handlePeopleChange(1)} style={{ padding: '0.25rem 0.75rem' }}>+</button>
-                </div>
-              </div>
-            )}
+            <AnimatePresence>
+              {splitMode === 'equal' && (
+                <motion.div 
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  style={{ textAlign: 'right' }}
+                >
+                  <label>Personas</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
+                    <button className="secondary" onClick={() => handlePeopleChange(-1)} style={{ padding: '0.25rem 0.75rem' }}>-</button>
+                    <span style={{ fontSize: '1.25rem', fontWeight: 'bold', width: '2ch', textAlign: 'center' }}>{numPeople}</span>
+                    <button className="secondary" onClick={() => handlePeopleChange(1)} style={{ padding: '0.25rem 0.75rem' }}>+</button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
 
-        <div ref={summaryRef} style={{ background: 'rgba(0,0,0,0.03)', padding: '1.5rem', borderRadius: 'var(--card-radius)', display: 'flex', flexDirection: 'column', gap: '1rem', position: 'relative' }}>
+        <motion.div 
+          layout
+          ref={summaryRef} 
+          style={{ background: 'rgba(0,0,0,0.03)', padding: '1.5rem', borderRadius: 'var(--card-radius)', display: 'flex', flexDirection: 'column', gap: '1rem', position: 'relative' }}
+        >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h2 style={{ fontSize: '1.25rem' }}>Resumen</h2>
-            <button className="icon-button" onClick={handleExport} title="Descargar como imagen">
-              <Download size={20} />
-            </button>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} className="icon-button" onClick={saveToHistory} title="Guardar cuenta">
+                <Plus size={20} />
+              </motion.button>
+              <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} className="icon-button" onClick={handleExport} title="Descargar como imagen">
+                <Download size={20} />
+              </motion.button>
+            </div>
           </div>
           
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -171,12 +239,19 @@ function App() {
             <span>{formatCurrency(billAmount)}</span>
           </div>
           
-          {taxPercentage > 0 && (
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: 'var(--text-secondary)' }}>Impuestos ({taxPercentage}%)</span>
-              <span>{formatCurrency(taxAmount)}</span>
-            </div>
-          )}
+          <AnimatePresence>
+            {taxPercentage > 0 && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                style={{ display: 'flex', justifyContent: 'space-between', overflow: 'hidden' }}
+              >
+                <span style={{ color: 'var(--text-secondary)' }}>Impuestos ({taxPercentage}%)</span>
+                <span>{formatCurrency(taxAmount)}</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
           
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span style={{ color: 'var(--text-secondary)' }}>Propina ({tipPercentage}%)</span>
@@ -190,32 +265,44 @@ function App() {
 
           <div style={{ marginTop: 'auto', paddingTop: '0.5rem' }}>
             {splitMode === 'equal' ? (
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <motion.div 
+                key="equal"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+              >
                 <span style={{ fontWeight: '600', fontSize: '1.125rem' }}>Por persona ({numPeople})</span>
                 <span style={{ fontWeight: 'bold', fontSize: '1.5rem', color: 'var(--accent-color)' }}>{formatCurrency(equalSplitAmount)}</span>
-              </div>
+              </motion.div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <h3 style={{ fontSize: '1rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Desglose Individual</h3>
+              <motion.div 
+                key="advanced"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <h3 style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>Desglose Individual</h3>
+                  <button onClick={() => setIsAdvancedSplitOpen(true)} className="secondary" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}>Editar</button>
+                </div>
                 {people.map(p => (
                   <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.875rem' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Users size={14}/> {p.name}</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>{p.avatar} {p.name}</span>
                     <span style={{ fontWeight: '600' }}>{formatCurrency(getPersonTotal(parseFloat(p.amount) || 0))}</span>
                   </div>
                 ))}
-                {remainingAmount > 0 && (
+                {Math.abs(remainingAmount) > 0.01 && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: 'var(--danger-color)', marginTop: '0.5rem' }}>
                     <span>Falta por asignar</span>
                     <span>{formatCurrency(remainingAmount)}</span>
                   </div>
                 )}
-              </div>
+              </motion.div>
             )}
           </div>
-        </div>
+        </motion.div>
       </div>
 
-      {/* Settings Modal */}
       <Modal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} title="Configuración">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <div>
@@ -244,38 +331,84 @@ function App() {
         </div>
       </Modal>
 
-      {/* Advanced Split Modal */}
+      <Modal isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} title="Historial">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '400px', overflowY: 'auto', paddingRight: '0.5rem' }}>
+          {history.length === 0 ? (
+            <p style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>No hay recibos guardados.</p>
+          ) : (
+            <AnimatePresence>
+              {history.map(record => (
+                <motion.div 
+                  key={record.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'var(--bg-color)', borderRadius: 'var(--input-radius)', border: '1px solid var(--glass-border)' }}
+                >
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                    <span style={{ fontWeight: '600' }}>{new Intl.NumberFormat('en-US', { style: 'currency', currency: record.currency }).format(record.amount)}</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                      <Clock size={12}/> {record.date} • <Users size={12}/> {record.peopleCount} pers.
+                    </span>
+                  </div>
+                  <button className="icon-button" onClick={() => setHistory(history.filter(h => h.id !== record.id))} style={{ color: 'var(--danger-color)' }}>
+                    <Trash2 size={16}/>
+                  </button>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          )}
+        </div>
+      </Modal>
+
       <Modal isOpen={isAdvancedSplitOpen} onClose={() => setIsAdvancedSplitOpen(false)} title="Asignación Individual">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', background: 'var(--accent-light)', padding: '1rem', borderRadius: 'var(--input-radius)' }}>
-            <span>Por asignar:</span>
-            <span style={{ fontWeight: 'bold', color: remainingAmount === 0 ? 'var(--success-color)' : remainingAmount < 0 ? 'var(--danger-color)' : 'var(--text-primary)' }}>
+          <motion.div 
+            animate={{ backgroundColor: Math.abs(remainingAmount) < 0.01 ? 'var(--success-color)' : 'var(--accent-light)' }}
+            style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem', borderRadius: 'var(--input-radius)' }}
+          >
+            <span style={{ color: Math.abs(remainingAmount) < 0.01 ? 'white' : 'inherit' }}>Por asignar:</span>
+            <span style={{ fontWeight: 'bold', color: Math.abs(remainingAmount) < 0.01 ? 'white' : remainingAmount < 0 ? 'var(--danger-color)' : 'var(--text-primary)' }}>
               {formatCurrency(remainingAmount)}
             </span>
-          </div>
+          </motion.div>
 
           <div style={{ maxHeight: '300px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingRight: '0.5rem' }}>
-            {people.map(p => (
-              <div key={p.id} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                <input 
-                  type="text" 
-                  value={p.name} 
-                  onChange={e => updatePerson(p.id, 'name', e.target.value)}
-                  placeholder="Nombre"
-                  style={{ flex: 1 }}
-                />
-                <input 
-                  type="number" 
-                  value={p.amount || ''} 
-                  onChange={e => updatePerson(p.id, 'amount', parseFloat(e.target.value) || 0)}
-                  placeholder="0.00"
-                  style={{ width: '100px' }}
-                />
-                <button className="icon-button" onClick={() => removePerson(p.id)} style={{ color: 'var(--danger-color)' }}>
-                  <Trash2 size={18} />
-                </button>
-              </div>
-            ))}
+            <AnimatePresence>
+              {people.map(p => (
+                <motion.div 
+                  key={p.id} 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0, overflow: 'hidden' }}
+                  style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}
+                >
+                  <button 
+                    onClick={() => changeAvatar(p.id)}
+                    style={{ background: 'var(--bg-color)', border: '1px solid var(--glass-border)', padding: '0.5rem', borderRadius: 'var(--input-radius)', fontSize: '1.25rem' }}
+                  >
+                    {p.avatar}
+                  </button>
+                  <input 
+                    type="text" 
+                    value={p.name} 
+                    onChange={e => updatePerson(p.id, 'name', e.target.value)}
+                    placeholder="Nombre"
+                    style={{ flex: 1 }}
+                  />
+                  <input 
+                    type="number" 
+                    value={p.amount === 0 ? '' : p.amount} 
+                    onChange={e => updatePerson(p.id, 'amount', parseFloat(e.target.value) || 0)}
+                    placeholder="0.00"
+                    style={{ width: '80px' }}
+                  />
+                  <button className="icon-button" onClick={() => removePerson(p.id)} style={{ color: 'var(--danger-color)' }}>
+                    <Trash2 size={18} />
+                  </button>
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
           
           <button className="secondary" onClick={addPerson} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
@@ -284,7 +417,7 @@ function App() {
           <button className="primary" onClick={() => setIsAdvancedSplitOpen(false)}>Listo</button>
         </div>
       </Modal>
-    </div>
+    </motion.div>
   )
 }
 
