@@ -1,121 +1,106 @@
 import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import './index.css'
+import { useBilling } from './hooks/useBilling'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const {
+    billAmount, setBillAmount,
+    tipPercentage, setTipPercentage,
+    taxPercentage, setTaxPercentage,
+    currency, setCurrency,
+    numPeople, setNumPeople,
+    taxAmount, tipAmount, totalAmount, equalSplitAmount
+  } = useBilling();
+
+  const handleBillChange = (e) => {
+    const val = parseFloat(e.target.value);
+    setBillAmount(isNaN(val) ? 0 : val);
+  };
+
+  const handleTipChange = (tip) => setTipPercentage(tip);
+  
+  const handlePeopleChange = (delta) => {
+    setNumPeople(prev => Math.max(1, prev + delta));
+  };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency,
+    }).format(amount);
+  };
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="glass-panel" style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+      <header style={{ textAlign: 'center' }}>
+        <h1 style={{ marginBottom: '0.5rem', background: 'linear-gradient(90deg, var(--accent-color), #8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          SplitIt Pro
+        </h1>
+        <p style={{ color: 'var(--text-secondary)' }}>Dividí la cuenta sin estrés</p>
+      </header>
 
-      <div className="ticks"></div>
+      <div style={{ display: 'grid', gap: '1.5rem', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div>
+            <label>Monto de la cuenta</label>
+            <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }}>$</span>
+              <input 
+                type="number" 
+                value={billAmount || ''} 
+                onChange={handleBillChange} 
+                placeholder="0.00"
+                style={{ paddingLeft: '2rem' }}
+              />
+            </div>
+          </div>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
+          <div>
+            <label>Propina (%)</label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.5rem' }}>
+              {[0, 10, 15, 20, 25].map(tip => (
+                <button 
+                  key={tip}
+                  className={tipPercentage === tip ? 'primary' : 'secondary'}
+                  onClick={() => handleTipChange(tip)}
+                  style={{ padding: '0.5rem' }}
                 >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+                  {tip}%
+                </button>
+              ))}
+            </div>
+          </div>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+          <div>
+            <label>Dividir entre</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <button className="secondary" onClick={() => handlePeopleChange(-1)}>-</button>
+              <span style={{ fontSize: '1.25rem', fontWeight: 'bold', width: '2ch', textAlign: 'center' }}>{numPeople}</span>
+              <button className="secondary" onClick={() => handlePeopleChange(1)}>+</button>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ background: 'rgba(0,0,0,0.05)', padding: '1.5rem', borderRadius: 'var(--card-radius)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <h2 style={{ fontSize: '1.25rem' }}>Resumen</h2>
+          
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ color: 'var(--text-secondary)' }}>Propina</span>
+            <span style={{ fontWeight: '600' }}>{formatCurrency(tipAmount)}</span>
+          </div>
+          
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ color: 'var(--text-secondary)' }}>Total</span>
+            <span style={{ fontWeight: '600' }}>{formatCurrency(totalAmount)}</span>
+          </div>
+
+          <div style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontWeight: '600', fontSize: '1.125rem' }}>Por persona</span>
+            <span style={{ fontWeight: 'bold', fontSize: '1.5rem', color: 'var(--accent-color)' }}>{formatCurrency(equalSplitAmount)}</span>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
 
