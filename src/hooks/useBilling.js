@@ -7,11 +7,11 @@ export const useBilling = () => {
   const [currency, setCurrency] = useState('USD');
   const [splitMode, setSplitMode] = useState('equal'); // 'equal' | 'advanced'
   
-  // people: [{ id: 1, name: 'Person 1', amount: 0 }] for advanced, or just a number for equal
   const [numPeople, setNumPeople] = useState(1);
   const [people, setPeople] = useState([
-    { id: 1, name: 'You', amount: 0 }
+    { id: 1, name: 'Tú', amount: 0, avatar: '😎' }
   ]);
+  const [history, setHistory] = useState([]);
 
   // Load from local storage
   useEffect(() => {
@@ -26,6 +26,7 @@ export const useBilling = () => {
         setSplitMode(parsed.splitMode || 'equal');
         setNumPeople(parsed.numPeople || 1);
         if (parsed.people) setPeople(parsed.people);
+        if (parsed.history) setHistory(parsed.history);
       } catch (e) {
         console.error('Failed to parse saved state', e);
       }
@@ -35,9 +36,9 @@ export const useBilling = () => {
   // Save to local storage
   useEffect(() => {
     localStorage.setItem('splitit_pro_state', JSON.stringify({
-      billAmount, tipPercentage, taxPercentage, currency, splitMode, numPeople, people
+      billAmount, tipPercentage, taxPercentage, currency, splitMode, numPeople, people, history
     }));
-  }, [billAmount, tipPercentage, taxPercentage, currency, splitMode, numPeople, people]);
+  }, [billAmount, tipPercentage, taxPercentage, currency, splitMode, numPeople, people, history]);
 
   const taxAmount = billAmount * (taxPercentage / 100);
   const tipAmount = billAmount * (tipPercentage / 100);
@@ -53,6 +54,7 @@ export const useBilling = () => {
     splitMode, setSplitMode,
     numPeople, setNumPeople,
     people, setPeople,
+    history, setHistory,
     taxAmount,
     tipAmount,
     totalAmount,
