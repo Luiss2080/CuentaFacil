@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import './index.css';
-import { useBilling } from './hooks/useBilling';
+import { useBilling, getPersonTotal } from './hooks/useBilling';
 import Modal from './components/Modal';
 import { Settings, Download, Plus, Trash2, Users, History, Clock } from 'lucide-react';
 import html2canvas from 'html2canvas';
@@ -28,8 +28,9 @@ function App() {
   const summaryRef = useRef(null);
 
   const handleBillChange = (e) => {
-    const val = parseFloat(e.target.value);
-    setBillAmount(isNaN(val) ? 0 : val);
+    // setBillAmount sanitizes (rejects negative/NaN/Infinity) internally,
+    // so the raw string can be passed straight through.
+    setBillAmount(e.target.value);
   };
 
   const handleTipChange = (tip) => setTipPercentage(tip);
@@ -86,7 +87,10 @@ function App() {
   };
 
   const updatePerson = (id, field, value) => {
-    setPeople(people.map(p => p.id === id ? { ...p, [field]: value } : p));
+    // Individually-assigned consumption can't be negative: a negative
+    // share would silently increase everyone else's proportional tip/tax.
+    const safeValue = field === 'amount' ? Math.max(0, value) : value;
+    setPeople(people.map(p => p.id === id ? { ...p, [field]: safeValue } : p));
   };
 
   const changeAvatar = (id) => {
@@ -108,13 +112,6 @@ function App() {
       confetti({ particleCount: 50, spread: 60, origin: { y: 0.8 } });
     }
   }, [remainingAmount, isAdvancedSplitOpen, billAmount]);
-
-  const getPersonTotal = (amount) => {
-    const ratio = billAmount > 0 ? amount / billAmount : 0;
-    const personTip = tipAmount * ratio;
-    const personTax = taxAmount * ratio;
-    return amount + personTip + personTax;
-  };
 
   return (
     <motion.div 
@@ -140,7 +137,12 @@ function App() {
         </div>
       </header>
 
-      <div style={{ display: 'grid', gap: '1.5rem', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
+      {/* min(280px, 100%) instead of a bare 280px: on a narrow phone
+          (e.g. 375px wide, ~247px left after the outer padding) a hard
+          280px track minimum doesn't fit and forces the whole panel into
+          horizontal scroll. Capping the minimum at 100% of the available
+          space lets the grid collapse to a single column instead. */}
+      <div style={{ display: 'grid', gap: '1.5rem', gridTemplateColumns: 'repeat(auto-fit, minmax(min(280px, 100%), 1fr))' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <div>
             <label htmlFor="bill-amount">Monto de la cuenta</label>
@@ -300,7 +302,7 @@ function App() {
                 {people.map(p => (
                   <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.875rem' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>{p.avatar} {p.name}</span>
-                    <span style={{ fontWeight: '600' }}>{formatCurrency(getPersonTotal(parseFloat(p.amount) || 0))}</span>
+                    <span style={{ fontWeight: '600' }}>{formatCurrency(getPersonTotal(p.amount, { billAmount, tipAmount, taxAmount }))}</span>
                   </div>
                 ))}
                 {Math.abs(remainingAmount) > 0.01 && (
@@ -337,7 +339,7 @@ function App() {
               id="tax-percentage"
               type="number"
               value={taxPercentage}
-              onChange={e => setTaxPercentage(parseFloat(e.target.value) || 0)}
+              onChange={e => setTaxPercentage(e.target.value)}
               min="0"
             />
           </div>
@@ -423,6 +425,8 @@ function App() {
                     onChange={e => updatePerson(p.id, 'amount', parseFloat(e.target.value) || 0)}
                     placeholder="0.00"
                     aria-label={`Monto consumido por ${p.name || 'persona'}`}
+                    min="0"
+                    step="0.01"
                     style={{ width: '80px' }}
                   />
                   <button className="icon-button" onClick={() => removePerson(p.id)} aria-label={`Quitar a ${p.name || 'persona'}`} style={{ color: 'var(--danger-color)' }}>

@@ -89,6 +89,12 @@ body {
   padding: 2rem;
 }
 
+@media (max-width: 480px) {
+  #root {
+    padding: 1rem;
+  }
+}
+
 h1, h2, h3 {
   font-weight: 700;
   letter-spacing: -0.025em;
@@ -107,6 +113,12 @@ input, button {
   box-shadow: var(--shadow-lg);
   padding: 2rem;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+@media (max-width: 480px) {
+  .glass-panel {
+    padding: 1.25rem;
+  }
 }
 
 .glass-panel:hover {
@@ -158,6 +170,12 @@ button:focus-visible {
 
 input[type="number"], input[type="text"] {
   width: 100%;
+  /* Flex items default to min-width: auto, which for a text input can be
+     wider than the space left in a cramped flex row (e.g. the avatar +
+     name + amount + delete row in the "Individual" split, on a narrow
+     phone). min-width: 0 lets it shrink with its siblings instead of
+     forcing the row to overflow. */
+  min-width: 0;
   padding: 0.75rem 1rem;
   border-radius: var(--input-radius);
   border: 1px solid var(--glass-border);
@@ -247,4 +265,21 @@ label {
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* Touch targets: the tip/split-mode buttons (padding: 0.5rem around ~16px
+   text) and the people +/- steppers (padding: 0.25rem 0.75rem) render at
+   well under the ~44px minimum recommended for touch (WCAG 2.5.5 / Apple
+   HIG / Material Design). (pointer: coarse) targets touch/stylus input
+   specifically, without shrinking these back down for mouse users on a
+   narrow-but-precise pointer (e.g. a resized desktop window). */
+@media (pointer: coarse) {
+  button {
+    min-height: 44px;
+  }
+
+  .icon-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
 }

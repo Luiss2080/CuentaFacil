@@ -1,4 +1,4 @@
-# Arquitectura: SplitIt Pro
+# Arquitectura: CuentaFacil
 
 ## Stack Tecnológico
 - **Core:** React 18, Vite.
