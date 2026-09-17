@@ -1,6 +1,6 @@
-# Manual de Usuario: SplitIt Pro 💸
+# Manual de Usuario: CuentaFacil 💸
 
-Bienvenido a **SplitIt Pro**, tu calculadora de propinas y divisor de cuentas definitivo.
+Bienvenido a **CuentaFacil**, tu calculadora de propinas y divisor de cuentas definitivo.
 
 ## Características Principales
 - **División Equitativa:** Divide la cuenta en partes iguales rápidamente.
