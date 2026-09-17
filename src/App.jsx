@@ -140,7 +140,12 @@ function App() {
         </div>
       </header>
 
-      <div style={{ display: 'grid', gap: '1.5rem', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
+      {/* min(280px, 100%) instead of a bare 280px: on a narrow phone
+          (e.g. 375px wide, ~247px left after the outer padding) a hard
+          280px track minimum doesn't fit and forces the whole panel into
+          horizontal scroll. Capping the minimum at 100% of the available
+          space lets the grid collapse to a single column instead. */}
+      <div style={{ display: 'grid', gap: '1.5rem', gridTemplateColumns: 'repeat(auto-fit, minmax(min(280px, 100%), 1fr))' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <div>
             <label>Monto de la cuenta</label>
