@@ -11,6 +11,16 @@
   --accent-color: #3b82f6;
   --accent-hover: #2563eb;
   --accent-light: #eff6ff;
+  /* Text/icon color for content sitting directly on the page or glass
+     background (e.g. the unselected "secondary" buttons). #3b82f6 only
+     reaches ~3.7:1 against a white/near-white background, below the 4.5:1
+     WCAG AA minimum for normal-weight text; #1d4ed8 reaches ~6.7:1. */
+  --accent-text-color: #1d4ed8;
+  /* Fill for solid "primary" buttons. White text on #3b82f6 is also only
+     ~3.7:1; #2563eb/#1d4ed8 keep the same brand hue while giving white
+     text a safely passing contrast ratio in both themes. */
+  --button-primary-bg: #2563eb;
+  --button-primary-hover-bg: #1d4ed8;
   --danger-color: #ef4444;
   --success-color: #10b981;
   --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -31,6 +41,13 @@
     --accent-color: #60a5fa;
     --accent-hover: #3b82f6;
     --accent-light: rgba(59, 130, 246, 0.1);
+    /* #60a5fa already contrasts well (~5.8:1) against the dark glass
+       background, so it stays the same for secondary-button text. */
+    --accent-text-color: #60a5fa;
+    /* White text on #60a5fa is only ~2.5:1 in dark mode; #1d4ed8 keeps a
+       recognizably "brand blue" fill while giving white text ~6.7:1. */
+    --button-primary-bg: #1d4ed8;
+    --button-primary-hover-bg: #1e40af;
     --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.25);
   }
@@ -118,20 +135,20 @@ button {
 }
 
 button.primary {
-  background-color: var(--accent-color);
+  background-color: var(--button-primary-bg);
   color: white;
 }
 
 button.primary:hover {
-  background-color: var(--accent-hover);
+  background-color: var(--button-primary-hover-bg);
   transform: translateY(-2px);
   box-shadow: var(--shadow-sm);
 }
 
 button.secondary {
   background-color: transparent;
-  border: 1px solid var(--accent-color);
-  color: var(--accent-color);
+  border: 1px solid var(--accent-text-color);
+  color: var(--accent-text-color);
 }
 
 button.secondary:hover {
@@ -140,6 +157,15 @@ button.secondary:hover {
 
 button:active {
   transform: translateY(0);
+}
+
+/* Keyboard-only focus ring. :focus-visible (rather than :focus) keeps a
+   mouse click from showing the ring while still guaranteeing keyboard
+   users always get a clearly visible indicator, including for the
+   quick-percentage/mode toggle buttons and the people +/- steppers. */
+button:focus-visible {
+  outline: 2px solid var(--accent-text-color);
+  outline-offset: 2px;
 }
 
 input[type="number"], input[type="text"] {

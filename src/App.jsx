@@ -128,10 +128,10 @@ function App() {
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Divide la cuenta sin estrés</p>
         </div>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} className="icon-button" onClick={() => setIsHistoryOpen(true)}>
+          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} className="icon-button" onClick={() => setIsHistoryOpen(true)} aria-label="Ver historial de cuentas">
             <History size={24} />
           </motion.button>
-          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} className="icon-button" onClick={() => setIsSettingsOpen(true)}>
+          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} className="icon-button" onClick={() => setIsSettingsOpen(true)} aria-label="Abrir configuración">
             <Settings size={24} />
           </motion.button>
         </div>
@@ -145,10 +145,11 @@ function App() {
       <div style={{ display: 'grid', gap: '1.5rem', gridTemplateColumns: 'repeat(auto-fit, minmax(min(280px, 100%), 1fr))' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <div>
-            <label>Monto de la cuenta</label>
+            <label htmlFor="bill-amount">Monto de la cuenta</label>
             <div style={{ position: 'relative' }}>
-              <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }}>$</span>
+              <span aria-hidden="true" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }}>$</span>
               <input
+                id="bill-amount"
                 type="number"
                 value={billAmount || ''}
                 onChange={handleBillChange}
@@ -160,16 +161,18 @@ function App() {
             </div>
           </div>
 
-          <div>
-            <label>Propina (%)</label>
+          <div role="group" aria-label="Propina (%)">
+            <label id="tip-group-label">Propina (%)</label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.5rem' }}>
               {[0, 10, 15, 20, 25].map(tip => (
-                <motion.button 
+                <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   key={tip}
+                  type="button"
                   className={tipPercentage === tip ? 'primary' : 'secondary'}
                   onClick={() => handleTipChange(tip)}
+                  aria-pressed={tipPercentage === tip}
                   style={{ padding: '0.5rem' }}
                 >
                   {tip}%
@@ -179,41 +182,45 @@ function App() {
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <label>Modo de división</label>
+            <div role="group" aria-label="Modo de división">
+              <label id="split-mode-label">Modo de división</label>
               <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-                <motion.button 
+                <motion.button
                   whileTap={{ scale: 0.95 }}
+                  type="button"
                   className={splitMode === 'equal' ? 'primary' : 'secondary'}
                   onClick={() => setSplitMode('equal')}
+                  aria-pressed={splitMode === 'equal'}
                   style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
                 >
                   Partes Iguales
                 </motion.button>
-                <motion.button 
+                <motion.button
                   whileTap={{ scale: 0.95 }}
+                  type="button"
                   className={splitMode === 'advanced' ? 'primary' : 'secondary'}
                   onClick={() => { setSplitMode('advanced'); setIsAdvancedSplitOpen(true); }}
+                  aria-pressed={splitMode === 'advanced'}
                   style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
                 >
                   Individual
                 </motion.button>
               </div>
             </div>
-            
+
             <AnimatePresence>
               {splitMode === 'equal' && (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 20 }}
                   style={{ textAlign: 'right' }}
                 >
-                  <label>Personas</label>
+                  <label id="people-count-label">Personas</label>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
-                    <button className="secondary" onClick={() => handlePeopleChange(-1)} style={{ padding: '0.25rem 0.75rem' }}>-</button>
-                    <span style={{ fontSize: '1.25rem', fontWeight: 'bold', width: '2ch', textAlign: 'center' }}>{numPeople}</span>
-                    <button className="secondary" onClick={() => handlePeopleChange(1)} style={{ padding: '0.25rem 0.75rem' }}>+</button>
+                    <button type="button" className="secondary" onClick={() => handlePeopleChange(-1)} aria-label="Restar una persona" style={{ padding: '0.25rem 0.75rem' }}>-</button>
+                    <span aria-labelledby="people-count-label" style={{ fontSize: '1.25rem', fontWeight: 'bold', width: '2ch', textAlign: 'center' }}>{numPeople}</span>
+                    <button type="button" className="secondary" onClick={() => handlePeopleChange(1)} aria-label="Añadir una persona" style={{ padding: '0.25rem 0.75rem' }}>+</button>
                   </div>
                 </motion.div>
               )}
@@ -221,18 +228,21 @@ function App() {
           </div>
         </div>
 
-        <motion.div 
+        <motion.div
           layout
-          ref={summaryRef} 
+          ref={summaryRef}
+          role="region"
+          aria-label="Resumen de la cuenta"
+          aria-live="polite"
           style={{ background: 'rgba(0,0,0,0.03)', padding: '1.5rem', borderRadius: 'var(--card-radius)', display: 'flex', flexDirection: 'column', gap: '1rem', position: 'relative' }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h2 style={{ fontSize: '1.25rem' }}>Resumen</h2>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} className="icon-button" onClick={saveToHistory} title="Guardar cuenta">
+              <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} className="icon-button" onClick={saveToHistory} title="Guardar cuenta" aria-label="Guardar cuenta en el historial">
                 <Plus size={20} />
               </motion.button>
-              <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} className="icon-button" onClick={handleExport} title="Descargar como imagen">
+              <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} className="icon-button" onClick={handleExport} title="Descargar como imagen" aria-label="Descargar recibo como imagen PNG">
                 <Download size={20} />
               </motion.button>
             </div>
@@ -310,9 +320,10 @@ function App() {
       <Modal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} title="Configuración">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <div>
-            <label>Moneda</label>
-            <select 
-              value={currency} 
+            <label htmlFor="currency-select">Moneda</label>
+            <select
+              id="currency-select"
+              value={currency}
               onChange={e => setCurrency(e.target.value)}
               style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--input-radius)', background: 'var(--bg-color)', color: 'var(--text-primary)', border: '1px solid var(--glass-border)' }}
             >
@@ -323,8 +334,9 @@ function App() {
             </select>
           </div>
           <div>
-            <label>Impuestos Locales (%)</label>
+            <label htmlFor="tax-percentage">Impuestos Locales (%)</label>
             <input
+              id="tax-percentage"
               type="number"
               value={taxPercentage}
               onChange={e => setTaxPercentage(e.target.value)}
@@ -355,7 +367,12 @@ function App() {
                       <Clock size={12}/> {record.date} • <Users size={12}/> {record.peopleCount} pers.
                     </span>
                   </div>
-                  <button className="icon-button" onClick={() => setHistory(history.filter(h => h.id !== record.id))} style={{ color: 'var(--danger-color)' }}>
+                  <button
+                    className="icon-button"
+                    onClick={() => setHistory(history.filter(h => h.id !== record.id))}
+                    aria-label={`Eliminar recibo de ${new Intl.NumberFormat('en-US', { style: 'currency', currency: record.currency }).format(record.amount)} del ${record.date}`}
+                    style={{ color: 'var(--danger-color)' }}
+                  >
                     <Trash2 size={16}/>
                   </button>
                 </motion.div>
@@ -387,17 +404,19 @@ function App() {
                   exit={{ opacity: 0, height: 0, overflow: 'hidden' }}
                   style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}
                 >
-                  <button 
+                  <button
                     onClick={() => changeAvatar(p.id)}
+                    aria-label={`Cambiar avatar de ${p.name || 'persona'}`}
                     style={{ background: 'var(--bg-color)', border: '1px solid var(--glass-border)', padding: '0.5rem', borderRadius: 'var(--input-radius)', fontSize: '1.25rem' }}
                   >
                     {p.avatar}
                   </button>
-                  <input 
-                    type="text" 
-                    value={p.name} 
+                  <input
+                    type="text"
+                    value={p.name}
                     onChange={e => updatePerson(p.id, 'name', e.target.value)}
                     placeholder="Nombre"
+                    aria-label="Nombre de la persona"
                     style={{ flex: 1 }}
                   />
                   <input
@@ -405,11 +424,12 @@ function App() {
                     value={p.amount === 0 ? '' : p.amount}
                     onChange={e => updatePerson(p.id, 'amount', parseFloat(e.target.value) || 0)}
                     placeholder="0.00"
+                    aria-label={`Monto consumido por ${p.name || 'persona'}`}
                     min="0"
                     step="0.01"
                     style={{ width: '80px' }}
                   />
-                  <button className="icon-button" onClick={() => removePerson(p.id)} style={{ color: 'var(--danger-color)' }}>
+                  <button className="icon-button" onClick={() => removePerson(p.id)} aria-label={`Quitar a ${p.name || 'persona'}`} style={{ color: 'var(--danger-color)' }}>
                     <Trash2 size={18} />
                   </button>
                 </motion.div>
