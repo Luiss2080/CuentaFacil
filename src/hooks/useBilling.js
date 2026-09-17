@@ -1,8 +1,16 @@
 import { useState, useEffect } from 'react';
 
+// Key used to persist/restore the whole billing state in localStorage.
+// Named once so the getItem/setItem calls below can't drift out of sync.
+const LOCAL_STORAGE_KEY = 'splitit_pro_state';
+
+// Tip percentage applied on first load, and restored if a saved state is
+// missing one (e.g. an older/partial localStorage payload).
+const DEFAULT_TIP_PERCENTAGE = 15;
+
 export const useBilling = () => {
   const [billAmount, setBillAmount] = useState(0);
-  const [tipPercentage, setTipPercentage] = useState(15);
+  const [tipPercentage, setTipPercentage] = useState(DEFAULT_TIP_PERCENTAGE);
   const [taxPercentage, setTaxPercentage] = useState(0);
   const [currency, setCurrency] = useState('USD');
   const [splitMode, setSplitMode] = useState('equal'); // 'equal' | 'advanced'
@@ -15,12 +23,12 @@ export const useBilling = () => {
 
   // Load from local storage
   useEffect(() => {
-    const saved = localStorage.getItem('splitit_pro_state');
+    const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         setBillAmount(parsed.billAmount || 0);
-        setTipPercentage(parsed.tipPercentage || 15);
+        setTipPercentage(parsed.tipPercentage || DEFAULT_TIP_PERCENTAGE);
         setTaxPercentage(parsed.taxPercentage || 0);
         setCurrency(parsed.currency || 'USD');
         setSplitMode(parsed.splitMode || 'equal');
@@ -35,7 +43,7 @@ export const useBilling = () => {
 
   // Save to local storage
   useEffect(() => {
-    localStorage.setItem('splitit_pro_state', JSON.stringify({
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({
       billAmount, tipPercentage, taxPercentage, currency, splitMode, numPeople, people, history
     }));
   }, [billAmount, tipPercentage, taxPercentage, currency, splitMode, numPeople, people, history]);
