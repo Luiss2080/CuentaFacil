@@ -11,6 +11,16 @@
   --accent-color: #3b82f6;
   --accent-hover: #2563eb;
   --accent-light: #eff6ff;
+  /* Text/icon color for content sitting directly on the page or glass
+     background (e.g. the unselected "secondary" buttons). #3b82f6 only
+     reaches ~3.7:1 against a white/near-white background, below the 4.5:1
+     WCAG AA minimum for normal-weight text; #1d4ed8 reaches ~6.7:1. */
+  --accent-text-color: #1d4ed8;
+  /* Fill for solid "primary" buttons. White text on #3b82f6 is also only
+     ~3.7:1; #2563eb/#1d4ed8 keep the same brand hue while giving white
+     text a safely passing contrast ratio in both themes. */
+  --button-primary-bg: #2563eb;
+  --button-primary-hover-bg: #1d4ed8;
   --danger-color: #ef4444;
   --success-color: #10b981;
   --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -31,6 +41,13 @@
     --accent-color: #60a5fa;
     --accent-hover: #3b82f6;
     --accent-light: rgba(59, 130, 246, 0.1);
+    /* #60a5fa already contrasts well (~5.8:1) against the dark glass
+       background, so it stays the same for secondary-button text. */
+    --accent-text-color: #60a5fa;
+    /* White text on #60a5fa is only ~2.5:1 in dark mode; #1d4ed8 keeps a
+       recognizably "brand blue" fill while giving white text ~6.7:1. */
+    --button-primary-bg: #1d4ed8;
+    --button-primary-hover-bg: #1e40af;
     --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.25);
   }
@@ -72,6 +89,12 @@ body {
   padding: 2rem;
 }
 
+@media (max-width: 480px) {
+  #root {
+    padding: 1rem;
+  }
+}
+
 h1, h2, h3 {
   font-weight: 700;
   letter-spacing: -0.025em;
@@ -92,6 +115,12 @@ input, button {
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
+@media (max-width: 480px) {
+  .glass-panel {
+    padding: 1.25rem;
+  }
+}
+
 .glass-panel:hover {
   box-shadow: var(--shadow-glow);
 }
@@ -106,20 +135,20 @@ button {
 }
 
 button.primary {
-  background-color: var(--accent-color);
+  background-color: var(--button-primary-bg);
   color: white;
 }
 
 button.primary:hover {
-  background-color: var(--accent-hover);
+  background-color: var(--button-primary-hover-bg);
   transform: translateY(-2px);
   box-shadow: var(--shadow-sm);
 }
 
 button.secondary {
   background-color: transparent;
-  border: 1px solid var(--accent-color);
-  color: var(--accent-color);
+  border: 1px solid var(--accent-text-color);
+  color: var(--accent-text-color);
 }
 
 button.secondary:hover {
@@ -130,8 +159,23 @@ button:active {
   transform: translateY(0);
 }
 
+/* Keyboard-only focus ring. :focus-visible (rather than :focus) keeps a
+   mouse click from showing the ring while still guaranteeing keyboard
+   users always get a clearly visible indicator, including for the
+   quick-percentage/mode toggle buttons and the people +/- steppers. */
+button:focus-visible {
+  outline: 2px solid var(--accent-text-color);
+  outline-offset: 2px;
+}
+
 input[type="number"], input[type="text"] {
   width: 100%;
+  /* Flex items default to min-width: auto, which for a text input can be
+     wider than the space left in a cramped flex row (e.g. the avatar +
+     name + amount + delete row in the "Individual" split, on a narrow
+     phone). min-width: 0 lets it shrink with its siblings instead of
+     forcing the row to overflow. */
+  min-width: 0;
   padding: 0.75rem 1rem;
   border-radius: var(--input-radius);
   border: 1px solid var(--glass-border);
@@ -221,4 +265,21 @@ label {
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* Touch targets: the tip/split-mode buttons (padding: 0.5rem around ~16px
+   text) and the people +/- steppers (padding: 0.25rem 0.75rem) render at
+   well under the ~44px minimum recommended for touch (WCAG 2.5.5 / Apple
+   HIG / Material Design). (pointer: coarse) targets touch/stylus input
+   specifically, without shrinking these back down for mouse users on a
+   narrow-but-precise pointer (e.g. a resized desktop window). */
+@media (pointer: coarse) {
+  button {
+    min-height: 44px;
+  }
+
+  .icon-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
 }
