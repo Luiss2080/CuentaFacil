@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import './index.css';
-import { useBilling } from './hooks/useBilling';
+import { useBilling, getPersonTotal } from './hooks/useBilling';
 import Modal from './components/Modal';
 import { Settings, Download, Plus, Trash2, Users, History, Clock } from 'lucide-react';
 import html2canvas from 'html2canvas';
@@ -28,8 +28,9 @@ function App() {
   const summaryRef = useRef(null);
 
   const handleBillChange = (e) => {
-    const val = parseFloat(e.target.value);
-    setBillAmount(isNaN(val) ? 0 : val);
+    // setBillAmount sanitizes (rejects negative/NaN/Infinity) internally,
+    // so the raw string can be passed straight through.
+    setBillAmount(e.target.value);
   };
 
   const handleTipChange = (tip) => setTipPercentage(tip);
@@ -86,7 +87,10 @@ function App() {
   };
 
   const updatePerson = (id, field, value) => {
-    setPeople(people.map(p => p.id === id ? { ...p, [field]: value } : p));
+    // Individually-assigned consumption can't be negative: a negative
+    // share would silently increase everyone else's proportional tip/tax.
+    const safeValue = field === 'amount' ? Math.max(0, value) : value;
+    setPeople(people.map(p => p.id === id ? { ...p, [field]: safeValue } : p));
   };
 
   const changeAvatar = (id) => {
@@ -108,13 +112,6 @@ function App() {
       confetti({ particleCount: 50, spread: 60, origin: { y: 0.8 } });
     }
   }, [remainingAmount, isAdvancedSplitOpen, billAmount]);
-
-  const getPersonTotal = (amount) => {
-    const ratio = billAmount > 0 ? amount / billAmount : 0;
-    const personTip = tipAmount * ratio;
-    const personTax = taxAmount * ratio;
-    return amount + personTip + personTax;
-  };
 
   return (
     <motion.div 
@@ -146,11 +143,13 @@ function App() {
             <label>Monto de la cuenta</label>
             <div style={{ position: 'relative' }}>
               <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }}>$</span>
-              <input 
-                type="number" 
-                value={billAmount || ''} 
-                onChange={handleBillChange} 
+              <input
+                type="number"
+                value={billAmount || ''}
+                onChange={handleBillChange}
                 placeholder="0.00"
+                min="0"
+                step="0.01"
                 style={{ paddingLeft: '2rem', fontSize: '1.25rem', fontWeight: 'bold' }}
               />
             </div>
@@ -288,7 +287,7 @@ function App() {
                 {people.map(p => (
                   <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.875rem' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>{p.avatar} {p.name}</span>
-                    <span style={{ fontWeight: '600' }}>{formatCurrency(getPersonTotal(parseFloat(p.amount) || 0))}</span>
+                    <span style={{ fontWeight: '600' }}>{formatCurrency(getPersonTotal(p.amount, { billAmount, tipAmount, taxAmount }))}</span>
                   </div>
                 ))}
                 {Math.abs(remainingAmount) > 0.01 && (
@@ -320,10 +319,10 @@ function App() {
           </div>
           <div>
             <label>Impuestos Locales (%)</label>
-            <input 
-              type="number" 
-              value={taxPercentage} 
-              onChange={e => setTaxPercentage(parseFloat(e.target.value) || 0)}
+            <input
+              type="number"
+              value={taxPercentage}
+              onChange={e => setTaxPercentage(e.target.value)}
               min="0"
             />
           </div>
@@ -396,11 +395,13 @@ function App() {
                     placeholder="Nombre"
                     style={{ flex: 1 }}
                   />
-                  <input 
-                    type="number" 
-                    value={p.amount === 0 ? '' : p.amount} 
+                  <input
+                    type="number"
+                    value={p.amount === 0 ? '' : p.amount}
                     onChange={e => updatePerson(p.id, 'amount', parseFloat(e.target.value) || 0)}
                     placeholder="0.00"
+                    min="0"
+                    step="0.01"
                     style={{ width: '80px' }}
                   />
                   <button className="icon-button" onClick={() => removePerson(p.id)} style={{ color: 'var(--danger-color)' }}>
