@@ -9,6 +9,21 @@ import confetti from 'canvas-confetti';
 
 const AVATARS = ['😎', '👽', '🤠', '🤖', '👻', '😺', '🦄', '🦖'];
 
+// Quick-select tip percentage buttons shown under "Propina (%)".
+const TIP_PRESETS = [0, 10, 15, 20, 25];
+
+// How many past receipts the "Historial" panel keeps.
+const MAX_HISTORY_ENTRIES = 10;
+
+// Amounts are only ever off by binary floating-point noise (e.g. 0.1 + 0.2),
+// never by a real, meaningful fraction of a cent, so anything under this is
+// treated as "fully assigned"/"matched" rather than a real discrepancy.
+const AMOUNT_MATCH_TOLERANCE = 0.01;
+
+// canvas-confetti options for the two celebratory moments in the app.
+const CONFETTI_SAVED_RECEIPT = { particleCount: 100, spread: 70, origin: { y: 0.6 } };
+const CONFETTI_SPLIT_FULLY_ASSIGNED = { particleCount: 50, spread: 60, origin: { y: 0.8 } };
+
 function App() {
   const {
     billAmount, setBillAmount,
@@ -68,12 +83,8 @@ function App() {
         currency,
         peopleCount: splitMode === 'equal' ? numPeople : people.length
       };
-      setHistory([newRecord, ...history].slice(0, 10));
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 }
-      });
+      setHistory([newRecord, ...history].slice(0, MAX_HISTORY_ENTRIES));
+      confetti(CONFETTI_SAVED_RECEIPT);
     }
   };
 
@@ -108,8 +119,8 @@ function App() {
   const remainingAmount = billAmount - allocatedAmount;
   
   useEffect(() => {
-    if (isAdvancedSplitOpen && billAmount > 0 && Math.abs(remainingAmount) < 0.01) {
-      confetti({ particleCount: 50, spread: 60, origin: { y: 0.8 } });
+    if (isAdvancedSplitOpen && billAmount > 0 && Math.abs(remainingAmount) < AMOUNT_MATCH_TOLERANCE) {
+      confetti(CONFETTI_SPLIT_FULLY_ASSIGNED);
     }
   }, [remainingAmount, isAdvancedSplitOpen, billAmount]);
 
@@ -164,7 +175,7 @@ function App() {
           <div role="group" aria-label="Propina (%)">
             <label id="tip-group-label">Propina (%)</label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.5rem' }}>
-              {[0, 10, 15, 20, 25].map(tip => (
+              {TIP_PRESETS.map(tip => (
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -305,7 +316,7 @@ function App() {
                     <span style={{ fontWeight: '600' }}>{formatCurrency(getPersonTotal(p.amount, { billAmount, tipAmount, taxAmount }))}</span>
                   </div>
                 ))}
-                {Math.abs(remainingAmount) > 0.01 && (
+                {Math.abs(remainingAmount) > AMOUNT_MATCH_TOLERANCE && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: 'var(--danger-color)', marginTop: '0.5rem' }}>
                     <span>Falta por asignar</span>
                     <span>{formatCurrency(remainingAmount)}</span>
@@ -384,12 +395,12 @@ function App() {
 
       <Modal isOpen={isAdvancedSplitOpen} onClose={() => setIsAdvancedSplitOpen(false)} title="Asignación Individual">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <motion.div 
-            animate={{ backgroundColor: Math.abs(remainingAmount) < 0.01 ? 'var(--success-color)' : 'var(--accent-light)' }}
+          <motion.div
+            animate={{ backgroundColor: Math.abs(remainingAmount) < AMOUNT_MATCH_TOLERANCE ? 'var(--success-color)' : 'var(--accent-light)' }}
             style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem', borderRadius: 'var(--input-radius)' }}
           >
-            <span style={{ color: Math.abs(remainingAmount) < 0.01 ? 'white' : 'inherit' }}>Por asignar:</span>
-            <span style={{ fontWeight: 'bold', color: Math.abs(remainingAmount) < 0.01 ? 'white' : remainingAmount < 0 ? 'var(--danger-color)' : 'var(--text-primary)' }}>
+            <span style={{ color: Math.abs(remainingAmount) < AMOUNT_MATCH_TOLERANCE ? 'white' : 'inherit' }}>Por asignar:</span>
+            <span style={{ fontWeight: 'bold', color: Math.abs(remainingAmount) < AMOUNT_MATCH_TOLERANCE ? 'white' : remainingAmount < 0 ? 'var(--danger-color)' : 'var(--text-primary)' }}>
               {formatCurrency(remainingAmount)}
             </span>
           </motion.div>
